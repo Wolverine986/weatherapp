@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XENOWEATHER Simple</title>
+<style>
+body{margin:0;background:#05030f;color:#e8f4ff;font-family:system-ui,sans-serif;padding:16px;max-width:720px;margin:auto}
+h1{letter-spacing:.15em;color:#22e5ff}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+button{background:#ffffff12;color:inherit;border:1px solid #22e5ff55;border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit}
+button.on{background:#22e5ff33;border-color:#22e5ff}
+.card{background:#ffffff0d;border:1px solid #22e5ff33;border-radius:16px;padding:16px;margin-bottom:14px}
+.planet{width:160px;height:160px;border-radius:50%;margin:10px auto;box-shadow:0 0 50px var(--c1),inset -20px -14px 40px #000a;background:radial-gradient(circle at 30% 30%,var(--c1),var(--c2))}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.grid div{background:#0004;padding:8px;border-radius:10px}
+#log{height:150px;overflow:auto;margin-bottom:8px}
+input{width:70%;padding:8px;border-radius:10px;border:1px solid #22e5ff55;background:#0006;color:inherit}
+small{color:#8ea3c4}
+</style></head><body>
+<h1>XENOWEATHER</h1>
+<small>All data is simulated fiction.</small>
+<div class="tabs" id="tabs"></div>
+<div class="card" id="main"></div>
+<div class="card">
+  <b>NOVA (simulated)</b>
+  <div id="log"></div>
+  <input id="q" placeholder="Is it safe? Storm? What to wear?">
+  <button onclick="ask()">Send</button>
+</div>
+<script>
+const planets = {
+  Zyphora:  {c1:'#a855f7',c2:'#1e0a3c',k:262,p:84, w:38, s:7,v:12,r:2.1,gear:'insulated suit, grounding kit'},
+  Vulkaris: {c1:'#ff5a1f',c2:'#220500',k:940,p:310,w:120,s:9,v:1.5,r:6.5,gear:'thermal-ceramic suit, coolant pack'},
+  'Cryon-9':{c1:'#4fc3ff',c2:'#050b24',k:74, p:160,w:55, s:6,v:4,r:0.8,gear:'cryo suit, heated visor'},
+  'Aurelia Prime':{c1:'#3dff9a',c2:'#02241c',k:291,p:101,w:9,s:1,v:28,r:0.3,gear:'light survey suit'},
+  Titanis:  {c1:'#ff9d3a',c2:'#2a1202',k:94, p:147,w:6,  s:3,v:2,r:0.4,gear:'respirator, radar beacon'}
+};
+let cur = 'Aurelia Prime';
+
+function hazard(p){
+  const sc = Math.min(100, Math.round(Math.abs(p.k-288)/6 + Math.max(0,p.w-20)/2 + p.r*4 + p.s*3));
+  const label = sc<20 ? 'SAFE' : sc<45 ? 'HAZARDOUS' : sc<70 ? 'EXTREME' : 'LIFE-THREATENING';
+  return {sc, label};
+}
+
+function render(){
+  const p = planets[cur], h = hazard(p);
+  document.getElementById('tabs').innerHTML = Object.keys(planets)
+    .map(n => `<button class="${n===cur?'on':''}" onclick="cur='${n}';render()">${n}</button>`).join('');
+  document.getElementById('main').style.setProperty('--c1', p.c1);
+  document.getElementById('main').style.setProperty('--c2', p.c2);
+  document.getElementById('main').innerHTML = `
+    <h2>${cur}</h2>
+    <div class="planet"></div>
+    <p><b>${h.label}</b> (hazard ${h.sc}/100)</p>
+    <div class="grid">
+      <div>Temp: ${p.k} K / ${(p.k-273.15).toFixed(0)} °C</div>
+      <div>Pressure: ${p.p} kPa</div>
+      <div>Wind: ${p.w} m/s</div>
+      <div>Storm: ${p.s}/10</div>
+      <div>Visibility: ${p.v} km</div>
+      <div>Radiation: ${p.r} mSv/h</div>
+    </div>`;
+}
+
+function nova(q){
+  q = q.toLowerCase();
+  const p = planets[cur], h = hazard(p);
+  if (/wear|gear|suit/.test(q)) return `For ${cur}, bring: ${p.gear}.`;
+  if (/storm/.test(q)) return p.s>=7 ? `A severe storm is likely on ${cur} (${p.s}/10). Stay sheltered.` : `Storms on ${cur} are mild (${p.s}/10).`;
+  if (/safe|explore/.test(q)) return `${cur} is rated ${h.label}. ${h.sc<20 ? 'Exploration is fine.' : 'Go only with full protection.'}`;
+  return 'Try asking about safety, storms, or what to wear.';
+}
+
+function ask(){
+  const i = document.getElementById('q'), log = document.getElementById('log');
+  if (!i.value.trim()) return;
+  log.innerHTML += `<p><b>You:</b> ${i.value.replace(/</g,'&lt;')}</p><p><b>NOVA:</b> ${nova(i.value)} <small>(simulated)</small></p>`;
+  i.value = ''; log.scrollTop = log.scrollHeight;
+}
+document.getElementById('q').addEventListener('keydown', e => e.key==='Enter' && ask());
+render();
+</script></body></html>
